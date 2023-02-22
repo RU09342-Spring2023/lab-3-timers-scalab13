@@ -12,7 +12,7 @@ unsigned long count_timer = 0;             // Default blinking time value
 unsigned int counting = 0;                  // Determine if LED will blink by default value or value of LED time pressed
                                             // 0 = timer not counting, 1 = timer counting
 unsigned int rising_edge = 1;
-unsigned int falling_edge = 0;
+
 
 void gpioInit();
 void timerInit();
@@ -76,18 +76,21 @@ __interrupt void Port_2(void)
     if (rising_edge)
     {
         rising_edge = 0;
-        falling_edge = 1;
-        P2IES &= ~BIT3;                        // P2.3 Low --> High edge
         counting = 1;
-        count_timer = 0;
+        P2IES &= ~BIT3;                         // P2.3 Low --> High edge
+
     }
-    else if (falling_edge)
+    else if (!(rising_edge))
     {
         rising_edge = 1;
-        falling_edge = 0;
-        P2IES |= BIT3;                         // P2.3 High --> Low edge
         counting = 0;
+
+
+        P2IES |= BIT3;                         // P2.3 High --> Low edge
+
+
     }
+
 }
 
 // Port 4 interrupt service routine
