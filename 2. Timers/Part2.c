@@ -10,7 +10,7 @@
 
 #include <msp430.h>
 
-int speed;                              // Global variable to determine speed of blinking
+unsigned int speed = 1500;                              // Global variable to determine speed of blinking
 
 void gpioInit();
 void timerInit();
@@ -82,10 +82,12 @@ __interrupt void Port_2(void)
 
     // @TODO When the button is pressed, you can change what the CCR0 Register is for the Timer. You will need to track what speed you should be flashing at.
     if (P2IN & BIT3)
-        if (TB1CCR0 < 150001)
-            TB1CCR0 += 50000;                       // Add offset to TB1CCR0
-        else
-            TB1CCR0 = 50000;                        // Reset offset to 50000
+        if (speed == 1500)
+            speed = 15000;                       // Set speed  to 1500
+        else if (speed == 15000){
+            speed = 50000;
+        }
+        else speed = 1500;
     else
         TB1CCR0 = TB1CCR0;
 }
@@ -97,7 +99,7 @@ __interrupt void Timer1_B0_ISR(void)
 {
     // @TODO You can toggle the LED Pin in this routine and if adjust your count in CCR0.
     P1OUT ^= BIT0;                          // Toggle Red LED
-    TB1CCTL0 &= ~CCIFG;                     // Clear CCR0 Flag
+    TB1CCR0 += speed;                     // Add speed to TB1CCR0
 }
 
 
