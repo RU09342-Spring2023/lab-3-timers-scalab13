@@ -12,6 +12,7 @@ unsigned long count_timer = 0;             // Default blinking time value
 unsigned int counting = 0;                  // Determine if LED will blink by default value or value of LED time pressed
                                             // 0 = timer not counting, 1 = timer counting
 unsigned int rising_edge = 1;
+unsigned int falling_edge = 0;
 
 
 void gpioInit();
@@ -30,6 +31,7 @@ void main(){
 
     __bis_SR_register(LPM3_bits | GIE);
     __no_operation();                             // For debug
+
 }
 
 
@@ -55,12 +57,12 @@ void timerInit(){
     // Setup Timer Compare IRQ
     TB0CCTL0 |= CCIE;                       // Enable TB0 CCR0 Overflow IRQ
     TB0CCR0 = 1;
-    TB0CTL = TBSSEL_1 | MC_2;               // ACLK, continuous mode
+    TB0CTL = TBSSEL_1 | MC_2 | ID_3;               // ACLK, continuous mode
 
     // Setup Timer Compare IRQ
     TB1CCTL0 |= CCIE;                       // Enable TB1 CCR0 Overflow IRQ
     TB1CCR0 = INITIAL_TIMER_VALUE;
-    TB1CTL = TBSSEL_1 | MC_2;               // ACLK, continuous mode
+    TB1CTL = TBSSEL_1 | MC_2 | ID_3;               // ACLK, continuous mode
 }
 
 
@@ -76,13 +78,17 @@ __interrupt void Port_2(void)
     if (rising_edge)
     {
         rising_edge = 0;
+        falling_edge = 1;
         counting = 1;
+        count_timer = 0;
         P2IES &= ~BIT3;                         // P2.3 Low --> High edge
+        P1OUT &= ~BIT0; //Led Off
 
     }
-    else if (!(rising_edge))
+    else if (falling_edge)
     {
         rising_edge = 1;
+        falling_edge = 0;  //Go to rising edge loop
         counting = 0;
 
 
@@ -111,6 +117,7 @@ __interrupt void Timer0_B0_ISR(void)
                                             // to add to time of interrupt for LED blinking
     else
         count_timer = count_timer;
+    TB0CCR0 += 1;
 }
 
 // Timer B1 interrupt service routine
@@ -118,5 +125,10 @@ __interrupt void Timer0_B0_ISR(void)
 __interrupt void Timer1_B0_ISR(void)
 {
     P1OUT ^= BIT0;                          // Toggle Red LED
-    TB1CCR0 = count_timer;                 // Increment time between interrupts
+    TB1CCR0 += count_timer;                 // Increment time between interrupts
 }
+
+
+
+
+
